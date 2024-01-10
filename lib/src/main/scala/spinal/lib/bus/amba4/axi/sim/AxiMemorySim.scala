@@ -91,7 +91,7 @@ case class SparseMemory() {
 
   def getElseInvalidPage(index : Int) : MemoryPage = {
     if(memory(index) == null) {
-      println(s"Page fault while reading page ${index} (0x${(index << 20).toHexString})")
+      // println(s"Page fault while reading page ${index} (0x${(index << 20).toHexString})")
       invalidPage()
     }
     else
