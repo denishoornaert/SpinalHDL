@@ -81,6 +81,7 @@ class CacheFiber() extends Area{
         name           = down,
         addressWidth   = up.m2s.parameters.addressWidth,
         dataWidth      = up.m2s.parameters.dataWidth,
+        prioWidth      = up.m2s.parameters.prioWidth, // TODO: check if up is correct
         blockSize      = parameter.blockSize,
         generalSlotCount = parameter.generalSlotCount
       )

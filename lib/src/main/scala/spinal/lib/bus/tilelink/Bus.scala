@@ -230,6 +230,7 @@ case class ChannelA(override val p : BusParameter) extends BusFragment(p) {
   val param   = Bits(3 bits)
   val source  = p.source()
   val address = p.address()
+  val prio    = p.prio()
   val size    = p.size()
   val mask    = p.withDataA generate p.mask()
   val data    = p.withDataA generate p.data()
@@ -260,6 +261,7 @@ case class ChannelA(override val p : BusParameter) extends BusFragment(p) {
     s.param := m.param
     s.source := m.source
     s.address := m.address
+    s.prio := m.prio
     s.debugId := m.debugId
     WeakConnector(m, s, m.size,    s.size   , defaultValue = () => null, allowUpSize = true , allowDownSize = false, allowDrop = false)
     WeakConnector(m, s, m.mask,    s.mask   , defaultValue = () => cloneOf(s.mask).assignDontCare(), allowUpSize = false , allowDownSize = false, allowDrop = true)

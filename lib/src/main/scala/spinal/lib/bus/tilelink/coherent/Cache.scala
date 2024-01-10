@@ -32,6 +32,7 @@ case class CacheParam(var unp : NodeParameters,
   def cacheSets = cacheLines / cacheWays
   def addressWidth = unp.m.addressWidth
   def dataWidth = unp.m.dataWidth
+  def prioWidth = unp.m.prioWidth
   def dataBytes = dataWidth/8
   def tagRange = addressWidth-1 downto log2Up(cacheBytes/cacheWays)
   def lineRange = tagRange.low-1 downto log2Up(lineSize)
@@ -61,10 +62,12 @@ object Cache{
   def downM2s(name : Nameable,
               addressWidth : Int,
               dataWidth : Int,
+              prioWidth : Int,
               blockSize : Int,
               generalSlotCount : Int) = M2sParameters(
     addressWidth = addressWidth,
     dataWidth = dataWidth,
+    prioWidth = prioWidth,
     masters = List(M2sAgent(
       name = name,
       mapping = List(M2sSource(
@@ -104,6 +107,7 @@ class Cache(val p : CacheParam) extends Component {
       name = this,
       addressWidth = addressWidth,
       dataWidth = dataWidth,
+      prioWidth = prioWidth,
       blockSize = blockSize,
       generalSlotCount = generalSlotCount
     ),
@@ -1082,6 +1086,7 @@ class Cache(val p : CacheParam) extends Component {
     toDownA.source := U"0" @@ cmd.gsId
     toDownA.address := cmd.address
     toDownA.size := cmd.size
+    toDownA.prio := 0 // TODO: temporary - idk what should be here
     toDownA.mask.assignDontCare()
     toDownA.data.assignDontCare()
     toDownA.corrupt := False
@@ -1337,6 +1342,7 @@ class Cache(val p : CacheParam) extends Component {
       val toDownA = toDownAFork.haltWhen(hazardUpC).swapPayload(io.down.a.payloadType)
       toDownA.opcode := (CMD.fromUpA && CMD.partialUpA).mux(Opcode.A.PUT_PARTIAL_DATA, Opcode.A.PUT_FULL_DATA)
       toDownA.param := 0
+      toDownA.prio  := 0 // TODO: temporary idk if this is correct
       toDownA.source := U(CMD.evict) @@ CMD.gsId
       toDownA.address := CMD.address
       toDownA.size := CMD.fromUpC.mux(U(log2Up(blockSize)), CMD.size)
@@ -1533,6 +1539,7 @@ object DirectoryGen extends App{
                   masterPerChannel: Int = 4,
                   dataWidth: Int = 64,
                   addressWidth: Int = 32,
+                  prioWidth: Int = 0,
                   lockSets: Int = 64*1024/64,
                   cacheBytes : Int = 64*1024,
                   cacheWays : Int = 8) = {
@@ -1542,6 +1549,7 @@ object DirectoryGen extends App{
         m = M2sParameters(
           addressWidth = addressWidth,
           dataWidth = dataWidth,
+          prioWidth = prioWidth,
           masters = List.tabulate(masterPerChannel)(mId =>
             M2sAgent(
               name = null,

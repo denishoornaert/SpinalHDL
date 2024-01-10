@@ -198,6 +198,7 @@ object M2sParameters{
   def apply(support: M2sSupport, sourceCount: Int, name : Nameable): M2sParameters = M2sParameters(
     addressWidth = support.addressWidth,
     dataWidth = support.dataWidth,
+    prioWidth = support.prioWidth,
     masters = List(M2sAgent(
       name = name,
       mapping = List(M2sSource(
@@ -210,6 +211,7 @@ object M2sParameters{
 
 case class M2sParameters(addressWidth : Int,
                          dataWidth : Int,
+                         prioWidth : Int,
                          masters   : Seq[M2sAgent]) extends OverridedEqualsHashCode {
   val sizeBytes = masters.map(_.emits.sizeBytes).max
   val sourceWidth = masters.map(_.sourceWidth).max
@@ -229,7 +231,8 @@ case class M2sParameters(addressWidth : Int,
   def toSupport() = new M2sSupport(
     transfers    = emits,
     addressWidth = addressWidth,
-    dataWidth    = dataWidth
+    dataWidth    = dataWidth,
+    prioWidth    = prioWidth
   )
 
   def toNodeParameters() = NodeParameters(this)
@@ -240,18 +243,21 @@ object M2sSupport{
   def apply(p : M2sParameters) : M2sSupport = M2sSupport(
     transfers    = p.emits,
     addressWidth = p.addressWidth,
-    dataWidth    = p.dataWidth
+    dataWidth    = p.dataWidth,
+    prioWidth    = p.prioWidth
   )
 }
 
 case class M2sSupport(transfers : M2sTransfers,
                       addressWidth : Int,
-                      dataWidth : Int) {
+                      dataWidth : Int,
+                      prioWidth : Int) {
   def mincover(that : M2sSupport): M2sSupport ={
     M2sSupport(
       transfers = transfers.mincover(that.transfers),
       dataWidth = dataWidth max that.dataWidth,
-      addressWidth = addressWidth max that.addressWidth
+      addressWidth = addressWidth max that.addressWidth,
+      prioWidth = prioWidth max that.prioWidth
     )
   }
 
@@ -259,6 +265,7 @@ case class M2sSupport(transfers : M2sTransfers,
     M2sParameters(
       addressWidth = addressWidth,
       dataWidth    = dataWidth,
+      prioWidth    = prioWidth,
       masters = p.masters.map(e => e) //TODO
     )
   }

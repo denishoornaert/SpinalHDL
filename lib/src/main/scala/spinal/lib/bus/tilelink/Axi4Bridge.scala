@@ -112,6 +112,7 @@ object Axi4BridgeGen extends App{
     new M2sParameters(
       addressWidth = 32,
       dataWidth = 32,
+      prioWidth = 0,
       masters = List.fill(2)(
         M2sAgent(
           name = null,

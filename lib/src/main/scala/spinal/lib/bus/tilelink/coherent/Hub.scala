@@ -12,10 +12,12 @@ object Hub{
   def downM2s(name : Nameable,
               addressWidth : Int,
               dataWidth : Int,
+              prioWidth : Int,
               blockSize : Int,
               downPendingMax : Int) = M2sParameters(
     addressWidth = addressWidth,
     dataWidth = dataWidth,
+    prioWidth = prioWidth,
     masters = List(M2sAgent(
       name = name,
       mapping = List(M2sSource(
@@ -54,6 +56,7 @@ case class HubParameters(var unp : NodeParameters,
   def cacheSize = sets*wayCount*blockSize
   def addressWidth = unp.m.addressWidth
   def dataWidth = unp.m.dataWidth
+  def prioWidth = unp.m.prioWidth
   def dataBytes = dataWidth/8
   def waySize = cacheSize/wayCount
   def linePerWay = waySize/lineSize
@@ -148,6 +151,7 @@ class Hub(p : HubParameters) extends Component{
       name           = this,
       addressWidth   = addressWidth,
       dataWidth      = dataWidth,
+      prioWidth      = prioWidth,
       blockSize      = blockSize,
       downPendingMax = downPendingMax
     ),
@@ -698,6 +702,7 @@ class Hub(p : HubParameters) extends Component{
       io.down.a.param := 0
       io.down.a.source := SLOT_ID
       io.down.a.address := ADDRESS
+      io.down.a.prio := 0 // TODO: temporary fix idk what is correct here
       io.down.a.size := SIZE
       io.down.a.data := PAYLOAD.data
       io.down.a.mask := PAYLOAD.mask
@@ -821,13 +826,14 @@ class Hub(p : HubParameters) extends Component{
 
 
 object HubGen extends App{
-  def basicConfig(probeCount : Int = 8, downPendingMax : Int = 16, masterPerChannel : Int = 4, dataWidth : Int = 64, addressWidth : Int = 13, setCount : Int = 256, wayCount : Int = 2, lineSize : Int = 64) = {
+  def basicConfig(probeCount : Int = 8, downPendingMax : Int = 16, masterPerChannel : Int = 4, dataWidth : Int = 64, addressWidth : Int = 13, prioWidth : Int = 0, setCount : Int = 256, wayCount : Int = 2, lineSize : Int = 64) = {
     val blockSize = 64
     HubParameters(
       unp = NodeParameters(
         m = M2sParameters(
           addressWidth = addressWidth,
           dataWidth = dataWidth,
+          prioWidth = prioWidth,
           masters = List.tabulate(masterPerChannel)(mId =>
             M2sAgent(
               name = null,

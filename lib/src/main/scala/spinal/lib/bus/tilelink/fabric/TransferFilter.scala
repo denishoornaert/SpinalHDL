@@ -44,7 +44,8 @@ class TransferFilter() extends Area {
     up.m2s.supported.load(M2sSupport(
       transfers = up.m2s.proposed.transfers,
       addressWidth = up.m2s.proposed.addressWidth,
-      dataWidth = down.m2s.supported.dataWidth
+      dataWidth = down.m2s.supported.dataWidth,
+      prioWidth = down.m2s.supported.prioWidth // TODO: check if down or up
     ))
     down.m2s.parameters.load(up.m2s.parameters)
 

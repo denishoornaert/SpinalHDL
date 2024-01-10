@@ -10,6 +10,7 @@ import spinal.core.sim.simRandom
 object BusParameter{
   def simple(addressWidth : Int,
              dataWidth : Int,
+             prioWidth : Int,
              sizeBytes : Int,
              sourceWidth : Int): BusParameter = BusParameter(
     addressWidth = addressWidth,
@@ -17,6 +18,7 @@ object BusParameter{
     sizeBytes    = sizeBytes,
     sourceWidth  = sourceWidth,
     sinkWidth    = 0,
+    prioWidth    = prioWidth,
     withBCE      = false,
     withDataA    = true,
     withDataB    = false,
@@ -31,6 +33,7 @@ case class BusParameter(addressWidth : Int,
                         sizeBytes    : Int,
                         sourceWidth  : Int,
                         sinkWidth    : Int,
+                        prioWidth    : Int,
                         withBCE      : Boolean,
                         withDataA    : Boolean,
                         withDataB    : Boolean,
@@ -53,6 +56,7 @@ case class BusParameter(addressWidth : Int,
   val sink        = HardType(UInt(sinkWidth bits))
   val size        = HardType(UInt(sizeWidth bits))
   val beat        = HardType(UInt(beatWidth  bits))
+  val prio        = HardType(UInt(prioWidth bits))
 }
 
 object SizeRange{
@@ -118,6 +122,7 @@ case class NodeParameters(m : M2sParameters,
     sizeBytes     = sizeBytes,
     sourceWidth   = m.sourceWidth,
     sinkWidth     = s.sinkWidth,
+    prioWidth     = m.prioWidth,
     withBCE       = withBCE,
     withDataA     = m.withDataA,
     withDataB     = s.withDataB,
@@ -140,6 +145,7 @@ object NodeParameters{
     M2sParameters(
       addressWidth = node.map(_.addressWidth) max,
       dataWidth = node.map(_.dataWidth) max,
+      prioWidth = node.map(_.prioWidth) max,
       masters = node.zipWithIndex.flatMap{
         case (m, i) => m.masters.map(_.withSourceOffset(i << sourcePreWidth))
       }
