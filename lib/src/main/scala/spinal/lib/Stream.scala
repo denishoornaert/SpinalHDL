@@ -758,6 +758,13 @@ class StreamArbiterFactory {
       locked.clearWhen(io.output.fire && unlock(io.output))
     }
   }
+  def customLambdaLock[T <: Data](unlock: Stream[T] => Bool) : this.type = setLock{
+    case c : StreamArbiter[T] => new Area {
+      import c._
+      locked setWhen(io.output.fire && !unlock(io.output))
+      locked.clearWhen(io.output.fire && unlock(io.output))
+    }
+  }
 }
 
 /**

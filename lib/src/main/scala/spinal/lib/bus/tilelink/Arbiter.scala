@@ -73,7 +73,8 @@ case class Arbiter(upsNodes : Seq[NodeParameters], downNode : NodeParameters) ex
       )
       */
     }
-    val lockLogic = StreamArbiterFactory().lambdaLock[ChannelA](_.isLast()).lockLogic
+    val lockLogic = StreamArbiterFactory().customLambdaLock[ChannelA](_.isLast()).lockLogic
+    // val lockLogic = StreamArbiterFactory().lambdaLock[ChannelA](_.isLast()).lockLogic
     val arbiter = new StreamArbiter(ChannelA(obp.toBusParameter()), upsNodes.size)(rtcciPrio, lockLogic)
 
 //    (arbiter.io.inputs, ups).zipped.foreach(_ connectFromRelaxed _.a)
