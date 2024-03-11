@@ -25,6 +25,40 @@ object Arbiter{
   }
 }
 
+case class PrioMask(maskWidth: Int, prioWidth: Int) extends Bundle {
+  val mask = Bits(maskWidth bits)
+  val prio = UInt(prioWidth bits)
+}
+
+case class PrioComparator(maskWidth: Int, prioWidth: Int) extends Component {
+  val io = new Bundle {
+    val upA = in(PrioMask(maskWidth, prioWidth))
+    val upB = in(PrioMask(maskWidth, prioWidth))
+    val result = out(PrioMask(2 * maskWidth, prioWidth))
+  }
+
+  val outA = Bits(maskWidth bits)
+  when(io.upA.prio < io.upB.prio) {
+    outA := 0
+  } otherwise {
+    outA := io.upA.mask
+  }
+  val outB = Bits(maskWidth bits)
+  when(io.upB.prio < io.upA.prio) {
+    outB := 0
+  } otherwise {
+    outB := io.upB.mask
+  }
+  io.result.mask := outA ## outB
+
+  when(io.upA.prio < io.upB.prio) {
+    io.result.prio := io.upB.prio
+  } otherwise {
+    io.result.prio := io.upA.prio
+  }
+}
+
+
 case class Arbiter(upsNodes : Seq[NodeParameters], downNode : NodeParameters) extends Component{
   val obp = downNode //Arbiter.downNodeFrom(upsNodes)
   val io = new Bundle{
@@ -45,23 +79,53 @@ case class Arbiter(upsNodes : Seq[NodeParameters], downNode : NodeParameters) ex
 
       // 1. Get the priorities of the ups
       val prios = Vec(core.io.inputs.map(_.payload.prio))
+      val valids = Vec(core.io.inputs.map(_.valid))
+      val prioWidth = prios(0).getWidth
+      val upCount = prios.length
 
-      // 2. Create a list with masks of which ups have a specific priority
-      // TODO: implicitly assumes all ups have same prioWidth
-      val prio_masks = Vec(Bits(core.io.inputs.size bits), core.io.inputs(0).prio.valueRange.size)
-      for (prioId <- core.io.inputs(0).prio.valueRange) {
-        prio_masks(prioId) :=  core.io.inputs.map(x => x.valid & (x.payload.prio === prioId)).asBits
+      var maskLength = 1
+      var instr = Vec(Bool, upCount)
+      var prev = Vec(PrioMask(maskLength, prioWidth), upCount)
+      for (x <- 0 until upCount) {
+        if (x % 2 == 1) {
+          instr(x) := False
+          prev(x).mask := valids(x).asBits
+          when (valids(x)) {
+            prev(x).prio := prios(x)
+          } otherwise {
+            prev(x).prio := 0
+          }
+        } else {
+          instr(x) := valids(x)
+          prev(x).mask := 0
+          prev(x).prio := 0
+        }
       }
-      
-      // 3. Create a mask for the which elements in the list have at least one bit set
-      val prio_masks_mask = prio_masks.map(_.orR)
 
-      // 4. Choose the first mask in the list (e.g. the mask of the ups with highest priority)
-      val prio_mask = prio_masks.oneHotAccess(OHMasking.first(prio_masks_mask.asBits))
+      while (maskLength != upCount) {
+        var nextMaskLength = maskLength * 2
+        var nextLength = upCount / nextMaskLength
+        var next = Vec(PrioMask(nextMaskLength, prioWidth), nextLength)
+
+        for (x <- 0 until nextLength) {
+          val comp = PrioComparator(maskLength, prioWidth)
+          comp.io.upA := prev(2 * x + 1)
+          comp.io.upB := prev(2 * x)
+          next(x) := comp.io.result
+        }
+        maskLength = nextMaskLength
+        prev = next
+      }
+
+      var prio_mask = Vec(Bool, upCount)
+      prio_mask := instr
+      when( !instr.asBits.orR ) {
+        prio_mask := prev(0).mask.asBools
+      }
 
       // 5. Put the obtained mask into the round robin logic below:
       core.maskProposal := OHMasking.roundRobin(
-        prio_mask.asBools,
+        prio_mask,
         Vec(core.maskLocked.last +: core.maskLocked.take(core.maskLocked.length-1))
       )
       
