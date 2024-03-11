@@ -826,7 +826,7 @@ class Hub(p : HubParameters) extends Component{
 
 
 object HubGen extends App{
-  def basicConfig(probeCount : Int = 8, downPendingMax : Int = 16, masterPerChannel : Int = 4, dataWidth : Int = 64, addressWidth : Int = 13, prioWidth : Int = 0, setCount : Int = 256, wayCount : Int = 2, lineSize : Int = 64) = {
+  def basicConfig(probeCount : Int = 8, downPendingMax : Int = 16, masterPerChannel : Int = 4, dataWidth : Int = 64, addressWidth : Int = 13, prioWidth : Int = 3, setCount : Int = 256, wayCount : Int = 2, lineSize : Int = 64) = {
     val blockSize = 64
     HubParameters(
       unp = NodeParameters(

@@ -18,7 +18,7 @@ class Axi4ToTilelinkFiber(blockSize : Int, slotsCount : Int) extends Area {
     downRead.m2s.proposed load tilelink.M2sSupport(
       addressWidth = up.config.addressWidth,
       dataWidth = up.config.dataWidth,
-      prioWidth = 0,
+      prioWidth = 3,
       transfers = tilelink.M2sTransfers(
         get = range
       )
@@ -48,7 +48,7 @@ class Axi4ToTilelinkFiber(blockSize : Int, slotsCount : Int) extends Area {
     downWrite.m2s.proposed load tilelink.M2sSupport(
       addressWidth = up.config.addressWidth,
       dataWidth = up.config.dataWidth,
-      prioWidth = 0,
+      prioWidth = 3,
       transfers = tilelink.M2sTransfers(
         putFull = if (up.config.useAllStrb) writeRange else tilelink.SizeRange.none,
         putPartial = writeRange

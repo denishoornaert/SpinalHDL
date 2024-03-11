@@ -18,7 +18,7 @@ object Axi4WriteOnlyToTilelink{
     M2sSupport(
       addressWidth = config.addressWidth,
       dataWidth = config.dataWidth,
-      prioWidth = 0,
+      prioWidth = 3,
       transfers = M2sTransfers(
         putFull = if(config.useAllStrb) range else SizeRange.none,
         putPartial = range
@@ -33,7 +33,7 @@ object Axi4ReadOnlyToTilelink{
     M2sSupport(
       addressWidth = config.addressWidth,
       dataWidth = config.dataWidth,
-      prioWidth = 0,
+      prioWidth = 3,
       transfers = M2sTransfers(
         get = range
       )
@@ -48,7 +48,7 @@ object Axi4ToTilelink{
     M2sSupport(
       addressWidth = config.addressWidth,
       dataWidth = config.dataWidth,
-      prioWidth = 0,
+      prioWidth = 3,
       transfers = M2sTransfers(
         get = range,
         putFull = if (config.useAllStrb) range else SizeRange.none,

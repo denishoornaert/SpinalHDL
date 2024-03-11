@@ -1539,7 +1539,7 @@ object DirectoryGen extends App{
                   masterPerChannel: Int = 4,
                   dataWidth: Int = 64,
                   addressWidth: Int = 32,
-                  prioWidth: Int = 0,
+                  prioWidth: Int = 3,
                   lockSets: Int = 64*1024/64,
                   cacheBytes : Int = 64*1024,
                   cacheWays : Int = 8) = {

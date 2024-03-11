@@ -225,7 +225,7 @@ object ClintSim extends App{
       support = tilelink.M2sSupport(
         addressWidth = 16,
         dataWidth = 32,
-        prioWidth = 0,
+        prioWidth = 3,
         transfers = tilelink.M2sTransfers(
           get = tilelink.SizeRange(8),
           putFull = tilelink.SizeRange(8)
