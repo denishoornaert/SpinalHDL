@@ -84,20 +84,12 @@ case class Arbiter(upsNodes : Seq[NodeParameters], downNode : NodeParameters) ex
       val upCount = prios.length
 
       var maskLength = 1
-      var instr = Vec(Bool, upCount)
       var prev = Vec(PrioMask(maskLength, prioWidth), upCount)
       for (x <- 0 until upCount) {
-        if (x % 2 == 1) {
-          instr(x) := False
-          prev(x).mask := valids(x).asBits
-          when (valids(x)) {
-            prev(x).prio := prios(x)
-          } otherwise {
-            prev(x).prio := 0
-          }
-        } else {
-          instr(x) := valids(x)
-          prev(x).mask := 0
+        prev(x).mask := valids(x).asBits
+        when(valids(x)) {
+          prev(x).prio := prios(x)
+        } otherwise {
           prev(x).prio := 0
         }
       }
@@ -117,20 +109,13 @@ case class Arbiter(upsNodes : Seq[NodeParameters], downNode : NodeParameters) ex
         prev = next
       }
 
-      var prio_mask = Vec(Bool, upCount)
-      prio_mask := instr
-      when( !instr.asBits.orR ) {
-        prio_mask := prev(0).mask.asBools
-      }
-
       // 5. Put the obtained mask into the round robin logic below:
       core.maskProposal := OHMasking.roundRobin(
-        prio_mask,
-        Vec(core.maskLocked.last +: core.maskLocked.take(core.maskLocked.length-1))
+        prev(0).mask.asBools,
+        Vec(core.maskLocked.last +: core.maskLocked.take(core.maskLocked.length-1)) // TODO: I suspect this value is changed each time rounRobin is calculated, we would need to lock it until we have a handshake on the down
       )
       
-
-      /*
+      /* Note: This is how the arbitrtation was performed before we made our changes:
       core.maskProposal := OHMasking.roundRobin(
         Vec(core.io.inputs.map(_.valid)),
         Vec(core.maskLocked.last +: core.maskLocked.take(core.maskLocked.length-1))
