@@ -58,7 +58,7 @@ case class PrioComparator(maskWidth: Int, prioWidth: Int) extends Component {
   }
 }
 
-
+// Test
 case class Arbiter(upsNodes : Seq[NodeParameters], downNode : NodeParameters) extends Component{
   val obp = downNode //Arbiter.downNodeFrom(upsNodes)
   val io = new Bundle{
@@ -78,26 +78,23 @@ case class Arbiter(upsNodes : Seq[NodeParameters], downNode : NodeParameters) ex
       }
 
       // 1. Get the priorities of the ups
-      val prios = Vec(core.io.inputs.map(_.payload.prio))
-      val valids = Vec(core.io.inputs.map(_.valid))
+      val prios = core.io.inputs.map(_.payload.prio)
+      val valids = core.io.inputs.map(_.valid)
       val prioWidth = prios(0).getWidth
       val upCount = prios.length
+      
+      val lastMask = Reg(Vec(Bool(), upCount))
+      for(bitId  <- lastMask.range){
+        lastMask(bitId) init(Bool(bitId == lastMask.length-1))
+      }
 
       var maskLength = 1
-      var instr = Vec(Bool, upCount)
-      var prev = Vec(PrioMask(maskLength, prioWidth), upCount)
+      var prev = Seq.fill(upCount)(PrioMask(maskLength, prioWidth))
       for (x <- 0 until upCount) {
-        if (x % 2 == 1) {
-          instr(x) := False
-          prev(x).mask := valids(x).asBits
-          when (valids(x)) {
-            prev(x).prio := prios(x)
-          } otherwise {
-            prev(x).prio := 0
-          }
-        } else {
-          instr(x) := valids(x)
-          prev(x).mask := 0
+        prev(x).mask := valids(x).asBits
+        when(valids(x)) {
+          prev(x).prio := prios(x)
+        } otherwise {
           prev(x).prio := 0
         }
       }
@@ -105,7 +102,7 @@ case class Arbiter(upsNodes : Seq[NodeParameters], downNode : NodeParameters) ex
       while (maskLength != upCount) {
         var nextMaskLength = maskLength * 2
         var nextLength = upCount / nextMaskLength
-        var next = Vec(PrioMask(nextMaskLength, prioWidth), nextLength)
+        var next = Seq.fill(nextLength)(PrioMask(nextMaskLength, prioWidth))
 
         for (x <- 0 until nextLength) {
           val comp = PrioComparator(maskLength, prioWidth)
@@ -117,19 +114,19 @@ case class Arbiter(upsNodes : Seq[NodeParameters], downNode : NodeParameters) ex
         prev = next
       }
 
-      var prio_mask = Vec(Bool, upCount)
-      prio_mask := instr
-      when( !instr.asBits.orR ) {
-        prio_mask := prev(0).mask.asBools
-      }
-
       // 5. Put the obtained mask into the round robin logic below:
       core.maskProposal := OHMasking.roundRobin(
-        prio_mask,
-        Vec(core.maskLocked.last +: core.maskLocked.take(core.maskLocked.length-1))
+        prev(0).mask.asBools,
+        Vec(lastMask.last +: lastMask.take(lastMask.length-1))
       )
-      
 
+      when(core.io.output.fire && !core.locked) {
+        lastMask := OHMasking.roundRobin(
+          prev(0).mask.asBools,
+          Vec(lastMask.last +: lastMask.take(lastMask.length-1))
+      )
+      }
+      
       /*
       core.maskProposal := OHMasking.roundRobin(
         Vec(core.io.inputs.map(_.valid)),
